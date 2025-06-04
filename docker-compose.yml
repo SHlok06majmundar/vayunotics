@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     image: vayunotics/backend:latest
     ports:
-      - "8000:8000"
+      - "5000:5000"
     environment:
       - PYTHONUNBUFFERED=1
     volumes:
@@ -22,7 +22,7 @@ services:
       dockerfile: Dockerfile
     image: vayunotics/frontend:latest
     ports:
-      - "80:80"
+      - "5173:5173"
     depends_on:
       - backend
     volumes:
