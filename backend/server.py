@@ -2,12 +2,16 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pymavlink import mavutil
 import asyncio
+import os
 
 app = FastAPI()
 
+# Get allowed origins from environment variable or use default
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,https://*.vercel.app").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -17,7 +21,9 @@ app.add_middleware(
 def connect_mavlink():
     while True:
         try:
-            conn = mavutil.mavlink_connection("tcp:127.0.0.1:5760")
+            # Get connection string from environment variable or use default
+            conn_string = os.getenv("MAVLINK_CONNECTION", "tcp:127.0.0.1:5760")
+            conn = mavutil.mavlink_connection(conn_string)
             conn.wait_heartbeat()
             print("✅ MAVLink Connected!")
             return conn
@@ -197,4 +203,5 @@ async def land():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run(app, host="0.0.0.0", port=port)
