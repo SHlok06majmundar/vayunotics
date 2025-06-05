@@ -172,7 +172,7 @@ export default function DivyalinkInterface() {
     let pollInterval;
     const fetchFlightModes = (retryCount = 0) => {
       setFlightModesLoading(true);
-      fetch("http://localhost:8000/get_flight_modes")
+      fetch("https://vayunotics-1.onrender.com/get_flight_modes")
         .then(res => {
           if (!res.ok) throw new Error(res.statusText);
           return res.json();
@@ -219,7 +219,7 @@ export default function DivyalinkInterface() {
       // Save all 6 mode slots
       const responses = await Promise.all(
         Object.entries(flightModes).map(([slot, modeId], idx) =>
-          fetch(`http://localhost:8000/set_flight_mode/${idx + 1}/${modeId}`, { method: "POST" })
+          fetch(`https://vayunotics-1.onrender.com/set_flight_mode/${idx + 1}/${modeId}`, { method: "POST" })
         )
       );
       for (const response of responses) {
@@ -227,7 +227,7 @@ export default function DivyalinkInterface() {
       }
       toast.success("Flight modes saved successfully");
       // Re-fetch to ensure sync
-      const data = await fetch("http://localhost:8000/get_flight_modes").then(r => r.json());
+      const data = await fetch("https://vayunotics-1.onrender.com/get_flight_modes").then(r => r.json());
       if (data.assignments) setFlightModes(data.assignments);
     } catch (error) {
       toast.error(`Failed to save flight modes: ${error.message}`);
@@ -280,7 +280,7 @@ export default function DivyalinkInterface() {
 
   const sendParameters = async () => {
     try {
-      const response = await fetch("http://localhost:8000/set_initial_parameters", {
+      const response = await fetch("https://vayunotics-1.onrender.com/set_initial_parameters", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -300,7 +300,7 @@ export default function DivyalinkInterface() {
     try {
       setCalibrationStatus('Calibration in Progress...');
       setStatusColor('text-gray-500');
-      const response = await fetch("http://localhost:8000/calibrate_accelerometer", { method: "POST" });
+      const response = await fetch("https://vayunotics-1.onrender.com/calibrate_accelerometer", { method: "POST" });
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || "Unknown error");
@@ -326,20 +326,20 @@ export default function DivyalinkInterface() {
   // Frame Configuration
   const configureFrame = async () => {
     try {
-      const frameTypeResponse = await fetch(`http://localhost:8000/set_frame_type/${frameType}`, {
+      const frameTypeResponse = await fetch(`https://vayunotics-1.onrender.com/set_frame_type/${frameType}`, {
         method: "POST",
       });
       if (!frameTypeResponse.ok) throw new Error("Failed to set frame type");
 
-      const frameClassResponse = await fetch(`http://localhost:8000/set_parameter/FRAME_CLASS/${frameClass}`, {
+      const frameClassResponse = await fetch(`https://vayunotics-1.onrender.com/set_parameter/FRAME_CLASS/${frameClass}`, {
         method: "POST",
       });
       if (!frameClassResponse.ok) throw new Error("Failed to set frame class");
 
       // Re-fetch actual values from backend to ensure UI is in sync
       const [typeRes, classRes] = await Promise.all([
-        fetch("http://localhost:8000/get_parameter/FRAME_TYPE").then(r => r.json()),
-        fetch("http://localhost:8000/get_parameter/FRAME_CLASS").then(r => r.json())
+        fetch("https://vayunotics-1.onrender.com/get_parameter/FRAME_TYPE").then(r => r.json()),
+        fetch("https://vayunotics-1.onrender.com/get_parameter/FRAME_CLASS").then(r => r.json())
       ]);
       if (typeof typeRes.value !== "undefined") setFrameType(Number(typeRes.value));
       if (typeof classRes.value !== "undefined") setFrameClass(Number(classRes.value));
@@ -354,7 +354,7 @@ export default function DivyalinkInterface() {
     let retryTimeoutType, retryTimeoutClass, retryTimeoutModes;
 
     const fetchFrameType = (retryCount = 0) => {
-      fetch("http://localhost:8000/get_parameter/FRAME_TYPE")
+      fetch("https://vayunotics-1.onrender.com/get_parameter/FRAME_TYPE")
         .then(res => {
           if (!res.ok) throw new Error(res.statusText);
           return res.json();
@@ -371,7 +371,7 @@ export default function DivyalinkInterface() {
         });
     };
     const fetchFrameClass = (retryCount = 0) => {
-      fetch("http://localhost:8000/get_parameter/FRAME_CLASS")
+      fetch("https://vayunotics-1.onrender.com/get_parameter/FRAME_CLASS")
         .then(res => {
           if (!res.ok) throw new Error(res.statusText);
           return res.json();
@@ -389,7 +389,7 @@ export default function DivyalinkInterface() {
     };
     const fetchFlightModes = (retryCount = 0) => {
       setFlightModesLoading(true);
-      fetch("http://localhost:8000/get_flight_modes")
+      fetch("https://vayunotics-1.onrender.com/get_flight_modes")
         .then(res => {
           if (!res.ok) throw new Error(res.statusText);
           return res.json();
@@ -512,16 +512,16 @@ export default function DivyalinkInterface() {
     try {
       const responses = await Promise.all([
         fetch(
-          `http://localhost:8000/set_parameter/FS_BATT_ACTION/${FAILSAFE_MAP[failsafeSettings.battery]
+          `https://vayunotics-1.onrender.com/set_parameter/FS_BATT_ACTION/${FAILSAFE_MAP[failsafeSettings.battery]
           }`,
           { method: "POST" }
         ),
         fetch(
-          `http://localhost:8000/set_parameter/FS_RC_ACTION/${FAILSAFE_MAP[failsafeSettings.rc]}`,
+          `https://vayunotics-1.onrender.com/set_parameter/FS_RC_ACTION/${FAILSAFE_MAP[failsafeSettings.rc]}`,
           { method: "POST" }
         ),
         fetch(
-          `http://localhost:8000/set_parameter/FS_GCS_ENABLE/${FAILSAFE_MAP[failsafeSettings.gcs]}`,
+          `https://vayunotics-1.onrender.com/set_parameter/FS_GCS_ENABLE/${FAILSAFE_MAP[failsafeSettings.gcs]}`,
           { method: "POST" }
         ),
       ]);
@@ -642,7 +642,7 @@ export default function DivyalinkInterface() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/takeoff/${altitude}`, {
+      const response = await fetch(`https://vayunotics-1.onrender.com/takeoff/${altitude}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
@@ -673,7 +673,7 @@ export default function DivyalinkInterface() {
       toast.success("Preflight checks must be completed before landing.");
       return;
     }
-    fetch("http://localhost:8000/land", {
+    fetch("https://vayunotics-1.onrender.com/land", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
     })
@@ -802,7 +802,7 @@ export default function DivyalinkInterface() {
   useEffect(() => {
     const fetchChecks = async () => {
       try {
-        const response = await fetch("http://localhost:8000/preflight/checks");
+        const response = await fetch("https://vayunotics-1.onrender.com/preflight/checks");
         const checks = await response.json();
         setPreflightChecks(checks);
       } catch (error) {
@@ -816,7 +816,7 @@ export default function DivyalinkInterface() {
     try {
       setPreflightStatus("in_progress");
 
-      const response = await fetch("http://localhost:8000/preflight/execute", {
+      const response = await fetch("https://vayunotics-1.onrender.com/preflight/execute", {
         method: "POST",
       });
       const results = await response.json();
@@ -833,7 +833,7 @@ export default function DivyalinkInterface() {
 
   const confirmManualCheck = async (checkId) => {
     try {
-      await fetch(`http://localhost:8000/preflight/confirm/${checkId}`, {
+      await fetch(`https://vayunotics-1.onrender.com/preflight/confirm/${checkId}`, {
         method: "POST",
       });
       await handleRunPreflight(); // Refresh status after confirmation
@@ -904,7 +904,7 @@ export default function DivyalinkInterface() {
       setArmingInProgress(true);
 
       if (!isArmed) {
-        const response = await fetch("http://localhost:8000/arm_drone", {
+        const response = await fetch("https://vayunotics-1.onrender.com/arm_drone", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
         });
@@ -917,7 +917,7 @@ export default function DivyalinkInterface() {
         toast.success("Drone armed successfully!");
         setIsArmed(true);
       } else {
-        const response = await fetch("http://localhost:8000/disarm_drone", {
+        const response = await fetch("https://vayunotics-1.onrender.com/disarm_drone", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
         });
@@ -1057,7 +1057,7 @@ export default function DivyalinkInterface() {
     setEscCalStatusMsg("Sending ESC calibration command to the drone...");
     setShowEscInstructions(false);
     try {
-      const response = await fetch("http://localhost:8000/calibrate_esc", { method: "POST" });
+      const response = await fetch("https://vayunotics-1.onrender.com/calibrate_esc", { method: "POST" });
       if (!response.ok) throw new Error("ESC calibration failed to start");
       setEscCalStatusMsg("ESC calibration command sent. Please follow the instructions below.");
       setShowEscInstructions(true);
@@ -1080,7 +1080,7 @@ export default function DivyalinkInterface() {
     setCompassCalDone(false);
     setCompassCalStatusMsg('Compass calibration started. Follow instructions.');
     try {
-      const response = await fetch('http://localhost:8000/calibrate_compass', { method: 'POST' });
+      const response = await fetch('https://vayunotics-1.onrender.com/calibrate_compass', { method: 'POST' });
       if (!response.ok) throw new Error('Failed to start compass calibration');
       // Optionally show a toast or message
     } catch (e) {
@@ -1130,7 +1130,7 @@ export default function DivyalinkInterface() {
       }));
 
       const response = await fetch(
-        "http://localhost:8000/generate_polygon_mission",
+        "https://vayunotics-1.onrender.com/generate_polygon_mission",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1159,7 +1159,7 @@ export default function DivyalinkInterface() {
   const handleFlyHere = async (waypoint) => {
     console.log(waypoint)
     try {
-      const response = await fetch("http://localhost:8000/fly_here", {
+      const response = await fetch("https://vayunotics-1.onrender.com/fly_here", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1178,7 +1178,7 @@ export default function DivyalinkInterface() {
 
   const handleReturnToHome = async () => {
     try {
-      const response = await fetch("http://localhost:8000/returntohome", {
+      const response = await fetch("https://vayunotics-1.onrender.com/returntohome", {
         method: "POST",
       });
       const data = await response.json();
@@ -1206,7 +1206,7 @@ export default function DivyalinkInterface() {
           alt: wp.alt || missionAltitude,
         })),
       ];
-      const response = await fetch("http://localhost:8000/start_mission", {
+      const response = await fetch("https://vayunotics-1.onrender.com/start_mission", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(missionWaypoints),
@@ -1224,7 +1224,7 @@ export default function DivyalinkInterface() {
   //end mission
   const handleEndMission = async () => {
     try {
-      const response = await fetch("http://localhost:8000/end_mission", {
+      const response = await fetch("https://vayunotics-1.onrender.com/end_mission", {
         method: "POST",
       });
       const data = await response.json();
@@ -1425,7 +1425,7 @@ export default function DivyalinkInterface() {
     setCalibrationStatus('Calibration in Progress...');
     setStatusColor('text-gray-500');
     try {
-      const response = await fetch("http://localhost:8000/calibrate_accelerometer", { method: "POST" });
+      const response = await fetch("https://vayunotics-1.onrender.com/calibrate_accelerometer", { method: "POST" });
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || "Unknown error");
@@ -1442,7 +1442,7 @@ export default function DivyalinkInterface() {
 
   const handleAccelCalConfirmStep = async (vehiclePos) => {
     try {
-      await fetch("http://localhost:8000/accel_confirm_step", {
+      await fetch("https://vayunotics-1.onrender.com/accel_confirm_step", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ vehiclePos }),
@@ -1465,7 +1465,7 @@ export default function DivyalinkInterface() {
     setAccelOffsetsCalError("");
     setAccelOffsetsCalStatus('Starting board level calibration...');
     try {
-      const response = await fetch("http://localhost:8000/calibrate_accel_offsets", { method: "POST" });
+      const response = await fetch("https://vayunotics-1.onrender.com/calibrate_accel_offsets", { method: "POST" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || "Unknown error");
       setAccelOffsetsCalStatus(data.message || "Board level calibration command sent.");
@@ -1494,7 +1494,7 @@ export default function DivyalinkInterface() {
     setAccelSimpleCalError("");
     setAccelSimpleCalStatus('Starting simple accelerometer calibration...');
     try {
-      const response = await fetch("http://localhost:8000/calibrate_accel_simple", { method: "POST" });
+      const response = await fetch("https://vayunotics-1.onrender.com/calibrate_accel_simple", { method: "POST" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || "Unknown error");
       setAccelSimpleCalStatus(data.message || "Simple accelerometer calibration command sent.");
@@ -2178,7 +2178,7 @@ export default function DivyalinkInterface() {
                                       }
 
                                       try {
-                                        const response = await fetch(`http://localhost:8000/change_altitude/${altitude}`, {
+                                        const response = await fetch(`https://vayunotics-1.onrender.com/change_altitude/${altitude}`, {
                                           method: "POST",
                                         });
 
