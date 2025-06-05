@@ -78,10 +78,10 @@ connection_state = {
     "last_activity": time.time()
 }
 # Connection parameters
-DEFAULT_CONNECTION_STRING = "tcp:127.0.0.1:5760"
-DEFAULT_BAUD_RATE = 57600
-MAX_RECONNECT_ATTEMPTS = 5
-RECONNECT_DELAY = 2
+DEFAULT_CONNECTION_STRING = os.getenv("MAVLINK_CONNECTION", "tcp:127.0.0.1:5760")
+DEFAULT_BAUD_RATE = int(os.getenv("MAVLINK_BAUD_RATE", "57600"))
+MAX_RECONNECT_ATTEMPTS = int(os.getenv("MAX_RECONNECT_ATTEMPTS", "5"))
+RECONNECT_DELAY = int(os.getenv("RECONNECT_DELAY", "2"))
 connection_params = {
     "comPort": None,
     "baudRate": DEFAULT_BAUD_RATE,
@@ -185,9 +185,12 @@ async def async_wait_for_disarm(timeout=5):
     await asyncio.to_thread(wait_for_disarm, timeout)
 app = FastAPI(lifespan=lifespan)
 
+# Get allowed origins from environment variable or use default
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,https://*.vercel.app").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

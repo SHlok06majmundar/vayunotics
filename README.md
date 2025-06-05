@@ -25,11 +25,14 @@ This guide will help you deploy the Vayunotics application to Vercel (frontend) 
    - Name: vayunotics-backend
    - Environment: Python
    - Build Command: `pip install -r requirements.prod.txt`
-   - Start Command: `uvicorn server:app --host 0.0.0.0 --port $PORT`
+   - Start Command: `uvicorn final:app --host 0.0.0.0 --port $PORT`
    - Environment Variables:
      ```
      ALLOWED_ORIGINS=https://your-frontend-url.vercel.app
      MAVLINK_CONNECTION=tcp:127.0.0.1:5760
+     MAVLINK_BAUD_RATE=57600
+     MAX_RECONNECT_ATTEMPTS=5
+     RECONNECT_DELAY=2
      ```
 
 ## Frontend Deployment (Vercel)
@@ -75,6 +78,11 @@ This guide will help you deploy the Vayunotics application to Vercel (frontend) 
    - Verify CORS settings
 
 3. If build fails:
-   - Check requirements.txt for missing dependencies
+   - Check requirements.prod.txt for missing dependencies
    - Verify Node.js version in Vercel
    - Check build logs in both platforms
+
+4. If MAVLink connection fails:
+   - Verify MAVLINK_CONNECTION string in Render environment variables
+   - Check if the drone/MAVLink device is accessible from Render
+   - Verify network connectivity and firewall settings
