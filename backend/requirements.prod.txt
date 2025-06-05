@@ -9,5 +9,5 @@ numpy==1.26.4
 shapely==2.1.0
 opencv-python==4.11.0.86
 psutil==6.0.0
-serial==0.0.97
+pyserial==3.5
 utm==0.7.0 

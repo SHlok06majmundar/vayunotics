@@ -6,4 +6,12 @@ services:
     startCommand: uvicorn final:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
-        value: 3.10.0 
+        value: 3.11.0
+      - key: PORT
+        value: 10000
+      - key: ALLOWED_ORIGINS
+        value: http://localhost:5173,https://*.vercel.app
+      - key: MAVLINK_CONNECTION
+        value: tcp:127.0.0.1:5760
+      - key: MAVLINK_BAUD_RATE
+        value: 57600 

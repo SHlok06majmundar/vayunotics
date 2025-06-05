@@ -87,6 +87,9 @@ connection_params = {
     "baudRate": DEFAULT_BAUD_RATE,
 }
 
+# Get port from environment variable or use default
+PORT = int(os.getenv("PORT", "8000"))
+
 @contextmanager
 def debug_lock(lock):
     logger.info("Acquiring lock...")
@@ -194,6 +197,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 class CheckType(str, Enum):
@@ -1721,19 +1725,5 @@ preflight_checks_db.clear()  # Clear any existing checks
 preflight_checks_db.extend([check.dict() for check in default_checks])
 
 if __name__ == "__main__":
-    import asyncio
-    from hypercorn.config import Config
-    from hypercorn.asyncio import serve
-    from final import app  # Ensure 'final.py' contains your FastAPI app instance named 'app'
-
-    config = Config()
-    config.bind = ["0.0.0.0:8000"]
-    config.reload = True
-    # config.keep_alive_timeout = 30
-    config.keep_alive_timeout = 60       # HTTP keep‑alive (not WS)
-    config.websocket_ping_interval = 60
-    config.loglevel = "info"
-    config.worker_class = "asyncio"  # Options: 'asyncio', 'uvloop', 'trio'
-    config.ws_max_size = 16777216  # 16MB, adjust as needed
-
-    asyncio.run(serve(app, config))
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=PORT)
