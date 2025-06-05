@@ -104,32 +104,18 @@ def debug_lock(lock):
 async def lifespan(app: FastAPI):
     """Manage startup and shutdown events"""
     global connection, message_thread, video_capture, video_thread
-    # loop = asyncio.get_running_loop()
-    # loop.set_default_executor(concurrent.futures.ThreadPoolExecutor(max_workers=20))
-    # tracemalloc.start()
+    
     logger.info(f"tracemalloc started, tracing: {tracemalloc.is_tracing()}")
     
     # Startup logic
     logger.info("🚀 Starting MAVLink connection...")
     with debug_lock(connection_lock):
         connection = connect_mavlink()
-    message_thread = threading.Thread(target=handle_messages, daemon=True)
-    message_thread.start()
-    
-    # # Initialize video capture
-    # video_url = os.getenv("VIDEO_STREAM_URL", "rtsp://192.168.1.1/live")
-    # logger.info(f"📹 Initializing video capture from {video_url}")
-    # try:
-    #     video_capture = cv2.VideoCapture(video_url)
-    #     if video_capture.isOpened():
-    #         video_active.set()
-    #         video_thread = threading.Thread(target=update_video_frames, daemon=True)
-    #         video_thread.start()
-    #         logger.info("✅ Video capture started")
-    #     else:
-    #         logger.error("❌ Failed to open video stream")
-    # except Exception as e:
-    #     logger.error(f"⚠️ Video initialization failed: {e}")
+        if connection:
+            message_thread = threading.Thread(target=handle_messages, daemon=True)
+            message_thread.start()
+        else:
+            logger.warning("⚠️ MAVLink connection not established, running in limited mode")
 
     yield  # Application runs here
     
@@ -145,7 +131,7 @@ async def lifespan(app: FastAPI):
         video_capture.release()
     if video_thread:
         video_thread.join(timeout=2)
-        
+
 def wait_for_arm(timeout=5):
     """
     Wait until drone is armed, with timeout.
@@ -332,76 +318,27 @@ def sanitize_mavlink_data(data):
     return data
 
 def connect_mavlink():
-    """Establish MAVLink connection with robust error handling"""
-    global connection_params
-    connection_string = connection_params.get("comPort",DEFAULT_CONNECTION_STRING)
-    # connection_string="tcp:127.0.0.1:5760"
-    baud_rate = connection_params.get("baudRate", DEFAULT_BAUD_RATE)
-    conn = None
-    print(connection_string)
-    
-    try:
-        logger.info(f"Attempting connection to {connection_string} at {baud_rate} baud")
-        conn = mavutil.mavlink_connection(
-            connection_string,
-            baud=baud_rate,
-            source_system=255,
-            source_component=0,
-            autoreconnect=True
-        )
-        logger.info("⌛ Waiting for heartbeat...")
-        conn.wait_heartbeat(timeout=10)
-        conn.mav.request_data_stream_send(
-            conn.target_system,
-            conn.target_component,
-            mavutil.mavlink.MAV_DATA_STREAM_ALL,
-            1,  # Hz (messages per second)
-            1   # Start streaming
-        )
-        logger.info(f"✅ MAVLink Connected via {connection_string}!")
-        logger.info(f"🔗 System ID: {conn.target_system}, Component ID: {conn.target_component}")
-        return conn
-    except Exception as e:
-        logger.error(f"⚠️ Connection failed: {e}")
-        if conn:
-            conn.close()
-        return None
-
-
-# def handle_messages():
-#     """Improved message handler with thread safety and robust reconnection"""
-#     global connection
-#     reconnect_attempts = 0
-    
-#     while True:
-#         try:
-#             with debug_lock(connection_lock):
-#                 current_conn = connection
-#             if not current_conn:
-#                 if reconnect_attempts >= MAX_RECONNECT_ATTEMPTS:
-#                     logger.warning("⚠️ Max reconnection attempts reached, waiting...")
-#                     time.sleep(5)
-#                     reconnect_attempts = 0
-#                 logger.info(f"🔄 Reconnecting (attempt {reconnect_attempts + 1})...")
-#                 with debug_lock(connection_lock):
-#                     connection = connect_mavlink()
-#                 reconnect_attempts += 1
-#                 time.sleep(RECONNECT_DELAY)
-#                 continue
-#             msg = current_conn.recv_match(timeout=1)
-#             # if msg:
-#             #     print(msg)
-#             if msg:
-#                 handle_message(msg)
-#                 reconnect_attempts = 0
-#         except Exception as e:
-#             logger.error(f"⚠️ Connection error: {e}")
-#             with debug_lock(connection_lock):
-#                 if connection:
-#                     connection.close()
-#                 connection = None
-#             reconnect_attempts += 1
-#             time.sleep(1)
+    """Establish MAVLink connection with proper error handling"""
+    attempt = 0
+    while attempt < MAX_RECONNECT_ATTEMPTS:
+        try:
+            logger.info(f"Attempting connection to {DEFAULT_CONNECTION_STRING} at {DEFAULT_BAUD_RATE} baud")
+            if not DEFAULT_CONNECTION_STRING:
+                raise ValueError("MAVLINK_CONNECTION environment variable is not set")
+                
+            conn = mavutil.mavlink_connection(DEFAULT_CONNECTION_STRING, baud=DEFAULT_BAUD_RATE)
+            conn.wait_heartbeat()
+            logger.info("✅ MAVLink Connected!")
+            return conn
+        except Exception as e:
+            attempt += 1
+            logger.error(f"⚠️ Connection failed: {str(e)}")
+            if attempt < MAX_RECONNECT_ATTEMPTS:
+                logger.info(f"🔄 Reconnecting (attempt {attempt})...")
+                time.sleep(RECONNECT_DELAY)
+            else:
+                logger.error("❌ Max reconnection attempts reached")
+                return None
 
 def handle_messages():
     """Improved message handler with thread safety and robust reconnection"""
@@ -474,65 +411,6 @@ def handle_messages():
                 connection = None
             reconnect_attempts += 1
             time.sleep(RECONNECT_DELAY)
-# def update_video_frames():
-#     """Background thread to capture video frames"""
-#     global frame_buffer
-#     while video_active.is_set():
-#         try:
-#             if video_capture.get(cv2.CAP_PROP_BUFFERSIZE) != 1:
-#                 video_capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-#             ret, frame = video_capture.read()
-#             if ret:
-#                 resized = cv2.resize(frame, (640, 480))
-#                 _, jpeg = cv2.imencode('.jpg', resized, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
-#                 with frame_lock:
-#                     frame_buffer = jpeg.tobytes()
-#             else:
-#                 logger.warning("Video frame read failed, attempting reconnect...")
-#                 reconnect_video()
-#         except Exception as e:
-#             logger.error(f"Video capture error: {e}")
-#             reconnect_video()
-#         time.sleep(0.03)
-
-def reconnect_video():
-    """Attempt to reconnect to video stream"""
-    global video_capture
-    max_attempts = 5
-    for attempt in range(max_attempts):
-        try:
-            if video_capture:
-                video_capture.release()
-            video_capture = cv2.VideoCapture(os.getenv("VIDEO_STREAM_URL"))
-            if video_capture.isOpened():
-                logger.info("✅ Video reconnected")
-                return True
-        except Exception as e:
-            logger.error(f"Reconnect attempt {attempt+1} failed: {e}")
-        time.sleep(2)
-    logger.error("❌ Maximum video reconnect attempts reached")
-    return False
-
-# @app.get("/video_stream")
-# async def video_stream():
-#     """MJPEG streaming endpoint for live video"""
-#     async def generate_frames():
-#         while True:
-#             with frame_lock:
-#                 if frame_buffer:
-#                     yield (b'--frame\r\n'
-#                            b'Content-Type: image/jpeg\r\n\r\n' + frame_buffer + b'\r\n')
-#                 else:
-#                     # Create error image with numpy
-#                     error_image = np.zeros((480, 640, 3), dtype=np.uint8)
-#                     cv2.putText(error_image, "NO VIDEO FEED", (50, 240), 
-#                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-#                     _, jpeg = cv2.imencode('.jpg', error_image)
-#                     yield (b'--frame\r\n'
-#                            b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes() + b'\r\n')
-#             await asyncio.sleep(0.03)
-#     return StreamingResponse(generate_frames(), media_type="multipart/x-mixed-replace; boundary=frame")
-
 
 def handle_message(msg):
     """Handle incoming MAVLink messages"""

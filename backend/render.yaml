@@ -14,4 +14,8 @@ services:
       - key: MAVLINK_CONNECTION
         value: tcp:127.0.0.1:5760
       - key: MAVLINK_BAUD_RATE
-        value: 57600 
+        value: "57600"
+      - key: MAX_RECONNECT_ATTEMPTS
+        value: "5"
+      - key: RECONNECT_DELAY
+        value: "2" 
